@@ -7,7 +7,6 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,20 +38,21 @@ jobs:
       - name: Deploy to EC2
         env:
           IMAGE: ${{ secrets.DOCKER_USERNAME }}/adaptivelearning-backend:latest
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           DEBUG: "False"
           DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
           DATABASE_USER: ${{ secrets.DATABASE_USER }}
           DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
           DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
-          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}   # no quotes in the secret value
-          ALLOWED_HOSTS: ${{ secrets.ALLOWED_HOSTS }}   # e.g. ec2-public-dns,localhost,127.0.0.1
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}   # ensure this secret is 3306 (no quotes)
+          ALLOWED_HOSTS: ${{ secrets.ALLOWED_HOSTS }}   # e.g. ec2-dns,localhost,127.0.0.1
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.AWS_EC2_IP }} << EOF
             set -e
-            IMAGE=${IMAGE}
             docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
-            docker pull $IMAGE
+            docker pull ${IMAGE}
             docker stop adaptivelearning-backend || true
             docker rm adaptivelearning-backend || true
             docker run -d --restart=always \
@@ -66,6 +66,5 @@ jobs:
               -e DATABASE_HOST="${DATABASE_HOST}" \
               -e DATABASE_PORT="${DATABASE_PORT}" \
               -e ALLOWED_HOSTS="${ALLOWED_HOSTS}" \
-              $IMAGE
+              ${IMAGE}
           EOF
-        shell: bash
