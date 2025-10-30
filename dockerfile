@@ -1,6 +1,6 @@
 #stage 1: Building Frontend
 
-FROM node:18-alpine as build-stage
+FROM node:18-alpine AS build-stage
 
 WORKDIR /code
 
@@ -17,8 +17,8 @@ RUN npm run build
 FROM python:3.11.0
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /code
 
@@ -26,25 +26,19 @@ WORKDIR /code
 COPY ./backend /code/backend
 
 # Install dependencies
-RUN pip install -r /code/backend/requirements.txt
+RUN pip install --upgrade pip && pip install -r /code/backend/requirements.txt
 
 #COPY frontend build to backend static files
-COPY --from=build-stage ./code/frontend/build /code/backend/static
-COPY --from=build-stage ./code/frontend/build/static /code/backend/static
+# COPY --from=build-stage ./code/frontend/build /code/backend/static
 COPY --from=build-stage ./code/frontend/build/index.html /code/backend/backend/templates/index.html
+COPY --from=build-stage ./code/frontend/build/static /code/backend/static
 
-#Run Django Migrations 
-RUN python /code/backend/manage.py migrate
 
-#RUN Django Collectstatic Command
-RUN python ./backend/manage.py collectstatic --no-input
 
-#EXPOSE PORT 80
-EXPOSE 80
+# Add entrypoint to run migrate + collectstatic at container start
+COPY ./backend/entrypoint.sh /code/backend/entrypoint.sh
+RUN chmod +x /code/backend/entrypoint.sh
 
+EXPOSE 8000
 WORKDIR /code/backend
-
-#RUN the django server
-CMD ["gunicorn", "backend.wsgi.application", "--bind", "0.0.0.0:8000"]
-
-
+ENTRYPOINT ["/code/backend/entrypoint.sh"]
