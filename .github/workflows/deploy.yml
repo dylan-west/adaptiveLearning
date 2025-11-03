@@ -40,7 +40,6 @@ jobs:
           IMAGE: ${{ secrets.DOCKER_USERNAME }}/adaptivelearning-backend:latest
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
           DEBUG: "False"
           DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
           DATABASE_USER: ${{ secrets.DATABASE_USER }}
@@ -58,7 +57,6 @@ jobs:
             docker run -d --restart=always \
               --name adaptivelearning-backend \
               -p 80:8000 \
-              -e SECRET_KEY="${SECRET_KEY}" \
               -e DEBUG="${DEBUG}" \
               -e DATABASE_NAME="${DATABASE_NAME}" \
               -e DATABASE_USER="${DATABASE_USER}" \
