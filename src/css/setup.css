@@ -1,0 +1,79 @@
+html, body{
+    margin: 0px;
+    position: relative;
+    font-family: 'Poppins';
+    height: max(100%, 50rem);
+}
+
+.header{
+    width: 100%;
+}
+
+
+img{
+    position: absolute;
+    top: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20%;
+}
+
+.main{
+    width: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+}
+
+p{
+    font-size: 1.5rem;
+    width: fit-content;
+    margin: auto;
+    margin-bottom: 4rem;
+}
+
+textarea{
+    box-sizing: border-box;
+    resize: none;
+    margin: auto;
+    width: 100%;
+    min-height: 10rem;
+    display: block;
+    border: 2px solid #9d9d9d;
+    border-radius: 2rem;
+    background-color: #f4f4f4;
+    margin-bottom: 1rem;
+
+    padding: 2rem;
+    font-size: 1rem;
+
+}
+
+.selections{
+    width: fit-content;
+    margin: auto;
+    margin-bottom: 2rem;
+}
+
+.selections select{
+    margin: 0rem 1rem;
+    padding: .5rem;
+}
+
+.setup-button{
+    display: block;
+    margin: 0rem auto;
+    width: 8rem;
+    color: white;
+    background-color: black;
+    border: 0px;
+    border-radius: 1rem;
+    padding: 1rem;
+}
+.setup-button:hover{
+    background-color: #00A181;
+    color: #054c46;
+    cursor: pointer;
+}
