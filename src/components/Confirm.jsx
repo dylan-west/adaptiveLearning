@@ -1,9 +1,20 @@
 import logo from "../assets/logo.png"
 import "../css/confirm.css"
 import BookCard from "./BookCard"
+import {useEffect} from "react"
 import {Link} from "react-router-dom"
+import { useLocation } from 'react-router-dom';
+
 
 function Confirm(){
+
+
+  const location = useLocation();
+  const formData = location.state?.formData;
+    useEffect( () => {
+    
+  }, [])
+
 
     const p = {
         marginBottom: "3em"
@@ -66,7 +77,7 @@ function Confirm(){
             <Link to="/setup">
                 <button className="revise" >Revise Choices</button>
             </Link>
-            <button className="confirm" >Start Learning</button>
+            <button className="confirm">Start Learning</button>
         </div>
     </div>
     </div>
