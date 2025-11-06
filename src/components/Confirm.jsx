@@ -4,6 +4,7 @@ import BookCard from "./BookCard"
 import {useEffect} from "react"
 import {Link} from "react-router-dom"
 import { useLocation } from 'react-router-dom';
+import { getArticles } from '../services/api';
 
 
 function Confirm(){
@@ -11,9 +12,24 @@ function Confirm(){
 
   const location = useLocation();
   const formData = location.state?.formData;
-    useEffect( () => {
+  const searchQuery = formData[0];
+  const subject = formData[1];
+  
+  
+  useEffect( () => {
+      
+      const fetchArticles = async () => {
+      try{
+        console.log("search query: " + searchQuery);
+        console.log("subject: " + subject);
+        const articles = await getArticles("Math");
+      } catch(err){
+        console.error("Error fetching articles:", err);
+      }
     
-  }, [])
+  }
+  fetchArticles();
+}, [])
 
 
     const p = {
