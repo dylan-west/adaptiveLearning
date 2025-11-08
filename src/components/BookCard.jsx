@@ -1,4 +1,11 @@
-function BookCard({book}){
+import {useEffect} from 'react'
+
+function BookCard({article}){
+
+    useEffect( () => {
+        console.log(article);
+    }, [])
+
     const image = {
         display: "block",
         width: "50%",
@@ -22,11 +29,11 @@ function BookCard({book}){
     }
 
     return <div style={card}>
-        <img src={book.img} alt={book.title} style={image}/>
-        <h2 style={title}>{book.title}</h2>
-        <p style={authors}>{book.authors.map( (author) => (
-            author + " "
-        ))}</p>
+        <h2 style={title}>{article.title}</h2>
+        <p style={authors}>{article.year}</p>
+        
+        
+        
     </div>
 
 }
