@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Adaptive Learning</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; }
+      label { display:block; margin-top: 1rem; }
+      select, textarea, input { width: 100%; padding: 0.5rem; }
+      button { margin-top: 1rem; padding: 0.6rem 1rem; }
+      .result { border: 1px solid #ddd; padding: 1rem; margin-top: 1rem; border-radius: 8px; }
+      .muted { color: #666; font-size: 0.9rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Paper Q&A on Abstracts</h1>
+
+    <form id="search-form">
+      {% csrf_token %}
+
+      <label for="fos">Field of Study</label>
+      <select id="fos">
+        <option value="Computer Science">Computer Science</option>
+        <option value="Mathematics">Mathematics</option>
+        <option value="Biology">Biology</option>
+        <option value="Medicine">Medicine</option>
+        <option value="Economics">Economics</option>
+        <option value="Physics">Physics</option>
+        <option value="Chemistry">Chemistry</option>
+        <option value="Engineering">Engineering</option>
+        <option value="Psychology">Psychology</option>
+        <option value="Sociology">Sociology</option>
+      </select>
+
+      <label for="query">Query</label>
+      <input id="query" placeholder="e.g. \"generative ai\" safety implications" />
+
+      <label for="question">Question to ask each abstract</label>
+      <textarea id="question" rows="4" placeholder="Type your question about the abstracts..."></textarea>
+
+      <button type="submit">Search & Analyze</button>
+    </form>
+
+    <div id="status" class="muted"></div>
+    <div id="results"></div>
+
+    <script>
+      const resultsEl = document.getElementById('results');
+      const statusEl = document.getElementById('status');
+
+      function renderPaperResult(paper, answer) {
+        const div = document.createElement('div');
+        div.className = 'result';
+        const title = paper.title || '(Untitled)';
+        const url = paper.url || (paper.openAccessPdf && paper.openAccessPdf.url) || null;
+        div.innerHTML = `
+          <div><strong>${title}</strong></div>
+          ${url ? `<div><a href="${url}" target="_blank">Link</a></div>` : ''}
+          <div class="muted">Publication Date: ${paper.publicationDate || 'N/A'} | Type: ${(paper.publicationTypes || []).join(', ')}</div>
+          <div style="margin-top:0.5rem"><strong>Answer:</strong> ${answer || 'No answer'}</div>
+        `;
+        resultsEl.appendChild(div);
+      }
+
+      async function askOpenAI(question, abstract, csrftoken) {
+        const prompt = `Question: ${question}\n\nAbstract: ${abstract || 'No abstract provided.'}\n\nProvide a concise, direct answer.`;
+        const res = await fetch('/api/generate/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+          body: JSON.stringify({ prompt })
+        });
+        const data = await res.json();
+        return data.response || data.error || 'No response';
+      }
+
+      document.getElementById('search-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        resultsEl.innerHTML = '';
+        statusEl.textContent = 'Searching papers...';
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        const fos = document.getElementById('fos').value;
+        const query = document.getElementById('query').value.trim() || '"generative ai"';
+        const question = document.getElementById('question').value.trim() || 'Summarize the abstract.';
+
+        // Request fields to include abstract & fieldsOfStudy
+        const fields = 'title,url,publicationTypes,publicationDate,openAccessPdf,abstract,fieldsOfStudy';
+        const params = new URLSearchParams({ query, fields, year: '2023-' });
+
+        try {
+          const papersRes = await fetch(`/papers/?${params.toString()}`);
+          const papersData = await papersRes.json();
+          const items = papersData.results && papersData.results.data ? papersData.results.data : (papersData.results && papersData.results) || [];
+
+          // Filter by selected field of study if present
+          const filtered = items.filter(p => {
+            const fosList = p.fieldsOfStudy || [];
+            return fosList.length === 0 || fosList.includes(fos);
+          });
+
+          statusEl.textContent = `Found ${filtered.length} papers. Analyzing abstracts...`;
+
+          for (const paper of filtered) {
+            const answer = await askOpenAI(question, paper.abstract, csrftoken);
+            renderPaperResult(paper, answer);
+          }
+          statusEl.textContent = 'Done.';
+        } catch (err) {
+          statusEl.textContent = 'Error fetching or analyzing papers.';
+          resultsEl.innerHTML = `<div class="result">${String(err)}</div>`;
+        }
+      });
+    </script>
+  </body>
+</html>
