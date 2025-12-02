@@ -28,9 +28,14 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = []
+
+def env_list(name: str, default: str = ""):
+    return [v.strip() for v in os.getenv(name, default).split(",") if v.strip()]
+
+
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1")
 
 
 # Application definition
@@ -73,12 +78,11 @@ REST_FRAMEWORK = {
 }
 
 # CORS settings for React frontend
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
 
 CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 
 TEMPLATES = [
     {
@@ -103,8 +107,12 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': os.getenv("DB_ENGINE", 'django.db.backends.sqlite3'),
+        'NAME': os.getenv("DB_NAME", BASE_DIR / 'db.sqlite3'),
+        'USER': os.getenv("DB_USER", ''),
+        'PASSWORD': os.getenv("DB_PASSWORD", ''),
+        'HOST': os.getenv("DB_HOST", ''),
+        'PORT': os.getenv("DB_PORT", ''),
     }
 }
 
@@ -144,6 +152,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
