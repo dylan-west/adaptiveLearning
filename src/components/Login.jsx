@@ -8,7 +8,7 @@ function Login(){
     return(
     <div>
         <div className="header">
-            <a href="setup.html"><img src={logo} alt="logo" /></a>
+            <Link to="/setup"><img src={logo} alt="logo" /></Link>
         </div>
         <div className="main">
             <div className="login">

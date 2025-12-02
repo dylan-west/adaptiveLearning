@@ -23,15 +23,11 @@ function Setup() {
 
   return (
     <div>
-      <div className="header">
-        <a href="setup.html">
-          <img src={logo} alt="logo" />
-        </a>
-      </div>
+        <div className="header">
+            <Link to="/setup"><img src={logo} alt="logo" /></Link>
+        </div>
 
       <div className="main">
-        <h3>{textField}</h3>
-        <h3>{select}</h3>
         <p>Please select a topic and describe what you'd like to learn</p>
         <form onSubmit={handleSubmit}>
         <textarea value={textField} onChange={(e) => {

@@ -4,16 +4,54 @@ import BookCard from "./BookCard"
 import {useEffect} from "react"
 import {Link} from "react-router-dom"
 import { useLocation } from 'react-router-dom';
+import {getArticles} from '../services/api'
+import {useState} from 'react'
 
 
 function Confirm(){
-
-
+  
+  const [loading, changeLoading] = useState(true);
   const location = useLocation();
   const formData = location.state?.formData;
-    useEffect( () => {
+  let searchQuery = formData[0];
+  let category = formData[1];
+  const [articles, setArticles] = useState({
+            data: [
+              {
+                title: "Trying to load articles",
+              },
+            ],
+          });
+
+
+    useEffect(() => {
+      const loadArticles = async () => {
+        try{
+          console.log("attempting to grab articles");
+          setArticles(await getArticles(searchQuery, category));
+
+        }
+        catch(err){
+          console.log("couldnt load articles. throwing error");
+          console.log(err);
+           setArticles({
+            data: [
+              {
+                title: "Failed to load articles!!",
+              },
+            ],
+          });
     
-  }, [])
+        }
+        finally{
+          console.log("loading off");
+          changeLoading(false);
+        }
+      };
+      loadArticles();
+      console.log('finished');
+      console.log(articles);
+    }, []);
 
 
     const p = {
@@ -21,6 +59,7 @@ function Confirm(){
     }
     const container = {
         display: "flex",
+        gap: "3em"
 
     }
     
@@ -32,34 +71,6 @@ function Confirm(){
     }
 
 
-
-    const textbooks = [
-      {
-        title: "Geology 101",
-        authors: ["Greg Smith", "Mary Watson"],
-        img: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fimages.thenile.io%2Fr1000%2F9781473601550.jpg&f=1&nofb=1&ipt=5c5b097fe58ff3c9245d6f4abf57ca83decadf7772563046b3dfdc3680abd6f0"
-      },
-      {
-        title: "California Geology",
-        authors: ["Stanley Jacobs", "John Henry"],
-        img: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fimages.thenile.io%2Fr1000%2F9781473601550.jpg&f=1&nofb=1&ipt=5c5b097fe58ff3c9245d6f4abf57ca83decadf7772563046b3dfdc3680abd6f0"
-      },
-      {
-        title: "Introduction to Mineralogy",
-        authors: ["Sarah Collins", "David Lee"],
-        img: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fimages.thenile.io%2Fr1000%2F9781473601550.jpg&f=1&nofb=1&ipt=5c5b097fe58ff3c9245d6f4abf57ca83decadf7772563046b3dfdc3680abd6f0"
-      },
-      {
-        title: "Plate Tectonics Explained",
-        authors: ["Rachel Green", "Thomas Patel"],
-        img: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fimages.thenile.io%2Fr1000%2F9781473601550.jpg&f=1&nofb=1&ipt=5c5b097fe58ff3c9245d6f4abf57ca83decadf7772563046b3dfdc3680abd6f0"
-      },
-      {
-        title: "The Earth's Layers",
-        authors: ["Linda Perez", "Mark Robinson"],
-        img: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fimages.thenile.io%2Fr1000%2F9781473601550.jpg&f=1&nofb=1&ipt=5c5b097fe58ff3c9245d6f4abf57ca83decadf7772563046b3dfdc3680abd6f0"
-      },
-    ];
     return <div>
             <div className="header">
         <a href="setup.html"><img src={logo} alt="logo" /></a>
@@ -69,15 +80,17 @@ function Confirm(){
         <h1>Your Learning Materials</h1>
         <p style={p}>Here is a list of the learning material we'll be referencing for this session.</p>
         <div id="book-container" style={container}>
-            {textbooks.map((textbook) => (
-                <BookCard book={textbook}></BookCard>
+            {articles.data.map((article) => (
+              <BookCard article={article} />
             ))}
         </div>
         <div className="confirm-buttons" style={buttonContain}>
             <Link to="/setup">
                 <button className="revise" >Revise Choices</button>
             </Link>
+            <Link to="/quiz">
             <button className="confirm">Start Learning</button>
+            </Link>
         </div>
     </div>
     </div>
