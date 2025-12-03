@@ -97,7 +97,19 @@ def create_quiz(request):
     # Create quiz
     quiz = serializer.save(user=request.user)  # type: ignore
     
-    # Generate initial questions based on topic and difficulty
+    # First, fetch papers from Semantic Scholar
+    try:
+        semantic_data = fetch_semantic_scholar_papers(quiz)
+        quiz.semantic_scholar_data = semantic_data
+        quiz.save()
+    except Exception as e:
+        quiz.delete()  # type: ignore
+        return Response(
+            {'error': f'Failed to fetch scholarly papers: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+    
+    # Then generate questions using OpenAI with the Semantic Scholar data
     try:
         generate_questions_for_quiz(quiz)
     except Exception as e:
@@ -343,25 +355,83 @@ def semantic_scholar_search(request):
 
 # ==================== HELPER FUNCTIONS ====================
 
+def fetch_semantic_scholar_papers(quiz):
+    """Fetch papers from Semantic Scholar API based on quiz parameters"""
+    # Use subTopic as the main query, topic is the field of study
+    query = quiz.subTopic
+    
+    url = "http://api.semanticscholar.org/graph/v1/paper/search/bulk"
+    api_key = os.environ.get("SEMANTIC_SCHOLAR_API_KEY")
+    
+    if not api_key:
+        raise Exception("SEMANTIC_SCHOLAR_API_KEY not configured")
+    
+    headers = {"x-api-key": api_key}
+    
+    # Build query parameters (we still slice defensively in case API ignores limit)
+    params = {
+        "query": query,
+        "fields": "title,abstract,url,publicationDate,openAccessPdf,authors,citationCount,fieldsOfStudy",
+        "fieldsOfStudy": quiz.topic,  # Use topic as field of study filter
+        "limit": 10,
+        "offset": 0,
+    }
+    
+    # Add publication year filter if specified
+    if quiz.publication_year:
+        params["year"] = quiz.publication_year
+    else:
+        params["year"] = "2015-"  # Default to recent papers
+    
+    try:
+        resp = requests.get(url, params=params, headers=headers, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+        papers = data.get('data', [])
+        
+        # Enforce a hard cap so we never store huge result sets
+        return papers[:10]
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Failed to fetch from Semantic Scholar: {str(e)}")
+
+
 def generate_questions_for_quiz(quiz, num_questions=5):
-    """Generate initial questions for a quiz using AI"""
-    topic = quiz.topic
-    subtopic = quiz.subTopic
-    difficulty = quiz.grade or 5  # Default to grade 5 if not specified
+    """Generate initial questions for a quiz using AI with Semantic Scholar data"""
+    field_of_study = quiz.topic  # topic is now the field of study
+    specific_topic = quiz.subTopic
     
-    prompt = f"""Generate {num_questions} educational multiple-choice questions about {topic}"""
-    if subtopic:
-        prompt += f" focusing on {subtopic}"
-    prompt += f""".
+    # Get semantic scholar data
+    papers_data = quiz.semantic_scholar_data or []
     
-The questions should be appropriate for grade {difficulty} level.
+    # Build context from papers
+    papers_context = ""
+    if papers_data:
+        papers_context = "\n\nBased on recent scholarly research:\n"
+        for idx, paper in enumerate(papers_data[:5], 1):  # Use top 5 papers
+            title = paper.get('title', 'Unknown')
+            abstract = paper.get('abstract', '')
+            authors = paper.get('authors', [])
+            author_names = ', '.join([a.get('name', '') for a in authors[:3]]) if authors else 'Unknown'
+            pub_date = paper.get('publicationDate', 'Unknown')
+            pdf_url = paper.get('openAccessPdf', {}).get('url', '') if paper.get('openAccessPdf') else ''
+            
+            papers_context += f"\n{idx}. '{title}' by {author_names} ({pub_date})"
+            if abstract:
+                papers_context += f"\n   Summary: {abstract[:300]}..."
+            if pdf_url:
+                papers_context += f"\n   PDF: {pdf_url}"
+    
+    prompt = f"""Generate {num_questions} educational multiple-choice questions about {specific_topic} in the field of {field_of_study}.
+
+These questions should be appropriate for college-level students and be based on scholarly research.
+{papers_context}
 
 For each question, provide:
 1. The question text
 2. Four answer options (A, B, C, D)
 3. The correct answer (letter)
-4. A brief explanation of why the answer is correct
-5. A difficulty level (1-5, where {difficulty} is the target)
+4. A brief explanation of why the answer is correct, citing the relevant research paper when applicable
+5. A difficulty level (1-5, where 3-4 is typical college level)
 
 Return the response as a JSON array with this structure:
 [
@@ -370,7 +440,8 @@ Return the response as a JSON array with this structure:
     "options": ["Option A", "Option B", "Option C", "Option D"],
     "correct_answer": "B",
     "explanation": "Explanation here",
-    "difficulty": 3
+    "difficulty": 3,
+    "source_reference": "Paper title or reference (optional)"
   }}
 ]
 
@@ -414,8 +485,9 @@ Make sure the questions are educational, factually accurate, and engaging."""
                 question_type=q_data.get('question_type', 'mcq'),
                 correct_answer=correct_text,
                 options=options,
-                difficulty=q_data.get('difficulty', difficulty if isinstance(difficulty, int) else 3),
+                difficulty=q_data.get('difficulty', 3),
                 why_correct=q_data.get('explanation', ''),
+                source_reference=q_data.get('source_reference', ''),
                 num=idx
             )
         
@@ -424,33 +496,41 @@ Make sure the questions are educational, factually accurate, and engaging."""
 
 
 def generate_adaptive_question(quiz, previous_correct):
-    """Generate next question based on user performance"""
+    """Generate next question based on user performance using Semantic Scholar data"""
     questions = quiz.questions.all()
     answered = questions.filter(correctness__isnull=False).count()
     
-    # Calculate current difficulty based on performance
+    # Calculate current difficulty based on performance (college level: 3-5)
+    base_difficulty = 3  # College level baseline
     if answered > 0:
         correct_count = questions.filter(correctness=True).count()
         accuracy = correct_count / answered
         
         # Adjust difficulty based on accuracy
         if accuracy > 0.75:
-            target_difficulty = min(5, (quiz.grade or 3) + 1)
+            target_difficulty = min(5, base_difficulty + 1)
         elif accuracy < 0.5:
-            target_difficulty = max(1, (quiz.grade or 3) - 1)
+            target_difficulty = max(3, base_difficulty - 1)
         else:
-            target_difficulty = quiz.grade or 3
+            target_difficulty = base_difficulty
     else:
-        target_difficulty = quiz.grade or 3
+        target_difficulty = base_difficulty
     
     # Only generate if we need more questions
     if questions.filter(correctness__isnull=True).count() < 2:
-        prompt = f"""Generate 1 educational multiple-choice question about {quiz.topic}"""
-        if quiz.subTopic:
-            prompt += f" focusing on {quiz.subTopic}"
-        prompt += f""".
+        # Get semantic scholar data for context
+        papers_data = quiz.semantic_scholar_data or []
+        papers_context = ""
+        if papers_data:
+            papers_context = "\n\nBased on the following research:\n"
+            for idx, paper in enumerate(papers_data[:3], 1):
+                title = paper.get('title', 'Unknown')
+                papers_context += f"{idx}. '{title}'\n"
         
-The question should be at difficulty level {target_difficulty} (scale 1-5).
+        prompt = f"""Generate 1 educational multiple-choice question about {quiz.subTopic} in the field of {quiz.topic}.
+        
+The question should be at difficulty level {target_difficulty} (scale 1-5, where 3-5 is college level).
+{papers_context}
 
 Return as JSON:
 {{

@@ -4,10 +4,9 @@ import { useNavigate } from 'react-router-dom';
 
 function CreateQuiz() {
   const [formData, setFormData] = useState({
-    topic: '',
+    topic: 'Computer Science',
     subTopic: '',
-    grade: 5,
-    prompt: '',
+    publication_year: '2015-',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -42,64 +41,72 @@ function CreateQuiz() {
       <div className="create-quiz-card">
         <h2>Create New Quiz</h2>
         <p className="description">
-          Enter a topic and we'll generate adaptive questions using AI
+          Create a college-level quiz based on scholarly research papers
         </p>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Topic: *</label>
-            <input
-              type="text"
+            <label>Field of Study: *</label>
+            <select
               name="topic"
               value={formData.topic}
               onChange={handleChange}
-              placeholder="e.g., Biology, World History, Algebra"
               required
-            />
+            >
+              <option value="Computer Science">Computer Science</option>
+              <option value="Medicine">Medicine</option>
+              <option value="Chemistry">Chemistry</option>
+              <option value="Biology">Biology</option>
+              <option value="Materials Science">Materials Science</option>
+              <option value="Physics">Physics</option>
+              <option value="Geology">Geology</option>
+              <option value="Psychology">Psychology</option>
+              <option value="Art">Art</option>
+              <option value="History">History</option>
+              <option value="Geography">Geography</option>
+              <option value="Sociology">Sociology</option>
+              <option value="Business">Business</option>
+              <option value="Political Science">Political Science</option>
+              <option value="Economics">Economics</option>
+              <option value="Philosophy">Philosophy</option>
+              <option value="Mathematics">Mathematics</option>
+              <option value="Engineering">Engineering</option>
+              <option value="Environmental Science">Environmental Science</option>
+              <option value="Education">Education</option>
+            </select>
           </div>
           <div className="form-group">
-            <label>Subtopic (optional):</label>
+            <label>Specific Topic: *</label>
             <input
               type="text"
               name="subTopic"
               value={formData.subTopic}
               onChange={handleChange}
-              placeholder="e.g., Cell Structure, World War II, Linear Equations"
+              placeholder="e.g., Neural Networks, Quantum Entanglement, Memory Formation"
+              required
             />
           </div>
           <div className="form-group">
-            <label>Grade Level: *</label>
-            <select name="grade" value={formData.grade} onChange={handleChange}>
-              <option value="1">1st Grade</option>
-              <option value="2">2nd Grade</option>
-              <option value="3">3rd Grade</option>
-              <option value="4">4th Grade</option>
-              <option value="5">5th Grade</option>
-              <option value="6">6th Grade</option>
-              <option value="7">7th Grade</option>
-              <option value="8">8th Grade</option>
-              <option value="9">9th Grade</option>
-              <option value="10">10th Grade</option>
-              <option value="11">11th Grade</option>
-              <option value="12">12th Grade</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Additional Instructions (optional):</label>
-            <textarea
-              name="prompt"
-              value={formData.prompt}
+            <label>Publication Year Range:</label>
+            <select
+              name="publication_year"
+              value={formData.publication_year}
               onChange={handleChange}
-              placeholder="Any specific requirements or focus areas..."
-              rows="4"
-            />
+            >
+              <option value="2023-">2023 - Present</option>
+              <option value="2020-">2020 - Present</option>
+              <option value="2015-">2015 - Present</option>
+              <option value="2010-">2010 - Present</option>
+              <option value="2000-">2000 - Present</option>
+              <option value="">All Years</option>
+            </select>
           </div>
           <div className="button-group">
             <button type="button" onClick={() => navigate('/dashboard')}>
               Cancel
             </button>
             <button type="submit" disabled={loading}>
-              {loading ? 'Generating Quiz...' : 'Create Quiz'}
+              {loading ? 'Fetching Papers & Generating Quiz...' : 'Create Quiz'}
             </button>
           </div>
         </form>

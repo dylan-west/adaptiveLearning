@@ -39,10 +39,12 @@ class Session(models.Model):
 class Quiz(models.Model):
 	quiz_id = models.AutoField(primary_key=True)
 	user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="quizzes")
-	topic = models.CharField(max_length=200)
-	subTopic = models.CharField(max_length=200, blank=True)
-	grade = models.IntegerField(null=True, blank=True)
-	prompt = models.TextField(blank=True)
+	topic = models.CharField(max_length=200, help_text="Field of study (e.g., Computer Science, Biology)")
+	subTopic = models.CharField(max_length=200, help_text="Specific topic within the field")
+	# Semantic Scholar fields
+	publication_year = models.CharField(max_length=20, blank=True, help_text="Publication year range (e.g., 2020-)")
+	# Store semantic scholar results as JSON
+	semantic_scholar_data = models.JSONField(null=True, blank=True, help_text="Retrieved papers from Semantic Scholar")
 	created_at = models.DateTimeField(auto_now_add=True)
 
 	class Meta:
@@ -52,7 +54,7 @@ class Quiz(models.Model):
 		ordering = ["-created_at"]
 
 	def __str__(self) -> str:
-		return f"Quiz {self.quiz_id} ({self.topic}) for user {self.user.id}"
+		return f"Quiz {self.quiz_id} ({self.topic} - {self.subTopic}) for user {self.user.id}"
 
 
 class Book(models.Model):

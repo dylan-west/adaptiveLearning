@@ -90,8 +90,7 @@ function Dashboard({ setIsAuthenticated }) {
                   <h3>{quiz.topic}</h3>
                   {quiz.subTopic && <p className="subtopic">{quiz.subTopic}</p>}
                   <p className="quiz-info">
-                    Grade Level: {quiz.grade || 'N/A'} | Questions:{' '}
-                    {quiz.questions?.length || 0}
+                    Questions: {quiz.questions?.length || 0}
                   </p>
                   <p className="quiz-date">
                     Created: {new Date(quiz.created_at).toLocaleDateString()}
@@ -108,6 +107,12 @@ function Dashboard({ setIsAuthenticated }) {
                       className="summary-btn"
                     >
                       View Summary
+                    </button>
+                    <button
+                      onClick={() => navigate(`/quiz/${quiz.quiz_id}/sources`)}
+                      className="sources-btn"
+                    >
+                      View Sources
                     </button>
                     <button
                       onClick={() => handleDeleteQuiz(quiz.quiz_id)}

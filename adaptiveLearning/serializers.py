@@ -92,27 +92,38 @@ class QuizSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quiz
         fields = [
-            'quiz_id', 'user', 'topic', 'subTopic', 'grade',
-            'prompt', 'created_at', 'questions', 'books'
+            'quiz_id', 'user', 'topic', 'subTopic',
+            'publication_year', 'semantic_scholar_data', 
+            'created_at', 'questions', 'books'
         ]
-        read_only_fields = ['quiz_id', 'user', 'created_at']
+        read_only_fields = ['quiz_id', 'user', 'created_at', 'semantic_scholar_data']
 
 
 class QuizCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating a new quiz"""
     class Meta:
         model = Quiz
-        fields = ['topic', 'subTopic', 'grade', 'prompt']
+        fields = ['topic', 'subTopic', 'publication_year']
     
     def validate_topic(self, value):
+        # Validate against common Semantic Scholar fields of study
+        valid_fields = [
+            'Computer Science', 'Medicine', 'Chemistry', 'Biology', 
+            'Materials Science', 'Physics', 'Geology', 'Psychology',
+            'Art', 'History', 'Geography', 'Sociology', 'Business',
+            'Political Science', 'Economics', 'Philosophy', 'Mathematics',
+            'Engineering', 'Environmental Science', 'Education'
+        ]
         if not value or len(value.strip()) < 2:
-            raise serializers.ValidationError("Topic must be at least 2 characters long.")
+            raise serializers.ValidationError("Field of study is required.")
+        if value not in valid_fields:
+            raise serializers.ValidationError(f"Invalid field of study. Must be one of: {', '.join(valid_fields)}")
         return value.strip()
     
-    def validate_grade(self, value):
-        if value and (value < 1 or value > 12):
-            raise serializers.ValidationError("Grade must be between 1 and 12.")
-        return value
+    def validate_subTopic(self, value):
+        if not value or len(value.strip()) < 2:
+            raise serializers.ValidationError("Specific topic is required and must be at least 2 characters long.")
+        return value.strip()
 
 
 class QuizSummarySerializer(serializers.Serializer):

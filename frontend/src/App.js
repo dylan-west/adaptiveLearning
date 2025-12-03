@@ -1,26 +1,3 @@
-<<<<<<< HEAD
-import logo from './logo.svg';
-import './App.css';
-
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-=======
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
@@ -29,6 +6,7 @@ import Dashboard from './components/Dashboard';
 import CreateQuiz from './components/CreateQuiz';
 import Quiz from './components/Quiz';
 import QuizSummary from './components/QuizSummary';
+import QuizSources from './components/QuizSources';
 import './App.css';
 
 function App() {
@@ -99,6 +77,12 @@ function App() {
             }
           />
           <Route
+            path="/quiz/:quizId/sources"
+            element={
+              isAuthenticated ? <QuizSources /> : <Navigate to="/login" />
+            }
+          />
+          <Route
             path="/"
             element={
               isAuthenticated ? (
@@ -111,7 +95,6 @@ function App() {
         </Routes>
       </div>
     </Router>
->>>>>>> combination
   );
 }
 
