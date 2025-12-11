@@ -69,7 +69,7 @@ An AI-powered adaptive learning platform built with Django REST Framework backen
 
 3. **Install Python dependencies**:
    ```bash
-   pip install django djangorestframework django-cors-headers openai python-dotenv requests
+   pip install -r requirements.txt
    ```
 
 4. **Create `.env` file** in project root:
