@@ -58,7 +58,7 @@ An AI-powered adaptive learning platform built with Django REST Framework backen
 
 1. **Navigate to project directory**:
    ```bash
-   cd djangotut
+   cd adaptiveLearning
    ```
 
 2. **Create and activate virtual environment** (recommended):
