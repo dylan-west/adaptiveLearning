@@ -98,13 +98,13 @@ An AI-powered adaptive learning platform built with Django REST Framework backen
    Backend will run at: `http://localhost:8000`
 
 ### Frontend Setup
-
+ make sure node is installed on device and active venv in new terminal in adaptiveLearning before next steps
 1. **Navigate to frontend directory**:
    ```bash
    cd frontend
    ```
 
-2. **Install dependencies**:
+2. **Install dependencies **: 
    ```bash
    npm install
    ```
